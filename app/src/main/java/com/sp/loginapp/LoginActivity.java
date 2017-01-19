@@ -14,6 +14,8 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.sp.loginapp.API.Root_login;
+import com.sp.loginapp.Model.SerializableCookies;
+import com.sp.loginapp.Model.SerializableOkHttpCookies;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -67,6 +69,8 @@ public class LoginActivity extends Activity {
     private OkHttpClient mclient=new OkHttpClient();
     private String cook="",viewstate="";
     private List<Cookie> mylist;
+    private ArrayList<String> url_list=new ArrayList<>();
+    List<SerializableOkHttpCookies> newlists= new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedINstanceState){
         super.onCreate(savedINstanceState);
@@ -128,9 +132,38 @@ public class LoginActivity extends Activity {
                                 Element ele=eles.first();
                                 String x=ele.text();
                                 Log.e(TAG, "onResponse: "+str);
-                                if (x.length()=="正方教务管理系统".length()){
-                                    Intent i=new Intent(LoginActivity.this,MainActivity.class);
-                                    startActivity(i);
+                                if (x.length()=="正方教务管理系统".length()){//success
+                                    Intent intent=new Intent(LoginActivity.this,MainActivity.class);
+                                    url_list.clear();
+                                    Elements elements=doc.select("a");
+                                    Log.e(TAG, "onResponse: size"+elements.size() );
+                                    int i=0;
+                                    for (Element element:elements){
+                                        String item=element.text();
+                                        String url="http://202.119.225.34/"+element.attr("href");
+                                        Log.e(TAG,i+ ".onResponse: item"+item +" url:"+url);
+                                        url_list.add(url);
+                                        i++;
+                                    }
+                                    //intent.putExtra("cookies",mylist.toString());
+                                    Bundle bundle=new Bundle();
+                                    SerializableCookies serializableCookies=new SerializableCookies();
+                                    //serializableCookies.setCookies(mylist);
+                                    //bundle.putSerializable("list_cookies",serializableCookies);
+                                    newlists.clear();
+                                    for (Cookie cookie:mylist){
+                                        Log.e(TAG, "????????:"+cookie.toString() );
+                                        SerializableOkHttpCookies newcook=new SerializableOkHttpCookies(cookie);
+                                        Log.e(TAG, "????????:"+newcook.getCookies().toString());
+                                        newlists.add(newcook);
+                                    }
+                                    serializableCookies.setCookies(newlists);
+                                    bundle.putSerializable("list_cookies",serializableCookies);
+
+                                    intent.putStringArrayListExtra("url",url_list);
+                                    intent.putExtra("cookies_list",bundle);
+                                    startActivity(intent);
+
                                 }else {
                                     runOnUiThread(new Runnable() {
                                         @Override
@@ -221,6 +254,7 @@ public class LoginActivity extends Activity {
                                         Log.e(TAG, "onResponse: valuestate"+viewstate );
                                     }
                                 });
+
                     }
                 });
     }
